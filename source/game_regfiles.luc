@@ -1,26 +1,24 @@
 global Reg {
   const R0 = 0;
   const R1 = 1;
-  const R2 = 7;
-  const ROW1 = 2;
-  const ROW2 = 3;
-  const ROW3 = 4;
-  const ROW4 = 5;
-  const ROW_SEL = 5;
-  const PLAYER = 6;
-  const CONST_ZERO = 15;
+  const R2 = 2;
+  const ROW1 = 3;
+  const ROW2 = 4;
+  const ROW3 = 5;
+  const ROW4 = 6;
+  const PLAYER = 7;
 }
 
 module game_regfiles (
     input clk,  // clock
     input rst,  // reset
     
-    input write_address[4], // write address
+    input write_address[3], // write address
     input we, // write enable
     input data[16], // data in
     
-    input read_address_a[4], //address port a 
-    input read_address_b[4], //address port b
+    input read_address_a[3], //address port a 
+    input read_address_b[3], //address port b
     output out_a[16], //read port a
     output out_b[16], //read port b
     
@@ -38,8 +36,6 @@ module game_regfiles (
       dff row2_stones[16](#INIT(3));
       dff row3_stones[16](#INIT(5));
       dff row4_stones[16](#INIT(7));
-      // row select
-      dff row_sel[16];
       // current player
       dff player[16];
     }
@@ -56,7 +52,6 @@ module game_regfiles (
         Reg.ROW2: row2_stones.d = data;
         Reg.ROW3: row3_stones.d = data;
         Reg.ROW4: row4_stones.d = data;
-        Reg.ROW_SEL: row_sel.d = data;
         Reg.PLAYER: player.d = data;
       }
     }
@@ -69,7 +64,6 @@ module game_regfiles (
       Reg.ROW2: out_a = row2_stones.q;
       Reg.ROW3: out_a = row3_stones.q;
       Reg.ROW4: out_a = row4_stones.q;
-      Reg.ROW_SEL: out_a = row_sel.q;
       Reg.PLAYER: out_a = player.q;
       default: out_a = 0;
     }
@@ -82,7 +76,6 @@ module game_regfiles (
       Reg.ROW2: out_b = row2_stones.q;
       Reg.ROW3: out_b = row3_stones.q;
       Reg.ROW4: out_b = row4_stones.q;
-      Reg.ROW_SEL: out_b = row_sel.q;
       Reg.PLAYER: out_b = player.q;
       default: out_b = 0;
     }

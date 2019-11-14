@@ -15,9 +15,9 @@ module game_fsm (
     output alufn[6],
     output bsel[2],
     output regfile_we,
-    output regfile_write_address[4],
-    output regfile_read_address_a[4],
-    output regfile_read_address_b[4],
+    output regfile_write_address[3],
+    output regfile_read_address_a[3],
+    output regfile_read_address_b[3],
     output halted
   ) {
   
@@ -99,9 +99,9 @@ module game_fsm (
     alufn = 0;
     bsel = 0;
     regfile_we = 0;
-    regfile_write_address = Reg.CONST_ZERO;
-    regfile_read_address_a = 0000;
-    regfile_read_address_b = 0000;
+    regfile_write_address = 0;
+    regfile_read_address_a = 0;
+    regfile_read_address_b = 0;
     
     if (rst) {
       game_fsm.d = game_fsm.START;

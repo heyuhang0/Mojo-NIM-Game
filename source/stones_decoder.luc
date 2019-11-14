@@ -1,0 +1,18 @@
+module stones_decoder (
+    input in[3],
+    output out[8]
+  ) {
+
+  always {
+    case (in) {
+      0: out = b00000000;
+      1: out = b00000001;
+      2: out = b00000011;
+      3: out = b00000111;
+      4: out = b00001111;
+      5: out = b00011111;
+      6: out = b00111111;
+      default: out = b01111111;
+    }
+  }
+}

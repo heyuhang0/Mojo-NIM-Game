@@ -1,0 +1,33 @@
+module alu_adder (
+    input a[16],
+    input b[16],
+    input alufn[6],
+    
+    output s[16],
+    output z,
+    output v,
+    output n
+    
+  ) {
+  sig xb[16];
+  sig read_sum[16];
+  always {
+    // generate xb which is xor of b
+    xb = b ^ 16x{alufn[0]};
+    // sum
+    read_sum = a + xb + alufn[0];
+
+    // z 
+    z = read_sum == 0;
+    // v
+    v = ((a[15] & xb[15] & !read_sum[15]) || (!a[15] & !xb[15] & read_sum[15]));
+    // n
+    n = read_sum[15] == 1;
+    s = read_sum;
+    
+    // multiplier
+    if(alufn[1:0] == b10){
+      s = a * b;
+    }
+  }
+}

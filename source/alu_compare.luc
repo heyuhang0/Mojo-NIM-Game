@@ -1,0 +1,22 @@
+module alu_compare (
+    input alufn[6],
+    input z,
+    input v,
+    input n,
+    
+    output comp[16]
+  ) {
+
+  always {
+    comp = 0;
+    case(alufn[2:1]){
+      b01:
+        comp[0] = z;
+      b10:
+        comp[0] = n^v;
+      b11:
+        comp[0] = z | (n^v);
+    comp[15:1] = 0;
+  }
+}
+}

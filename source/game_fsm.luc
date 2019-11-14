@@ -1,0 +1,702 @@
+module game_fsm (
+    input clk,  // clock
+    input rst,  // reset
+    
+    input btn_r1,
+    input btn_r2,
+    input btn_r3,
+    input btn_r4,
+    input btn_toggle,
+    input dip_first_player,
+    input dip_pve,
+    
+    input alu_z,
+    
+    output alufn[6],
+    output asel[2],
+    output bsel[2],
+    output wdsel[2],
+    output regfile_we,
+    output regfile_write_address[4],
+    output regfile_read_address_a[4],
+    output regfile_read_address_b[4],
+    output halted
+  ) {
+  
+  .clk(clk) {
+    fsm game_fsm = {
+      START,
+      
+      TOGGLE_PLAYER,
+      TOGGLE_PE,
+      
+      P_FISRT_SEL,
+      
+      P_R1_FIRST,
+      P_R1_REMOVE,
+      P_R1_IDLE,
+      P_R1_CHECK,
+      
+      P_R2_FIRST,
+      P_R2_REMOVE,
+      P_R2_IDLE,
+      P_R2_CHECK,
+      
+      P_R3_FIRST,
+      P_R3_REMOVE,
+      P_R3_IDLE,
+      P_R3_CHECK,
+      
+      P_R4_FIRST,
+      P_R4_REMOVE,
+      P_R4_IDLE,
+      P_R4_CHECK,
+      
+      XOR_12,
+      XOR_123,
+      XOR_1234,
+      
+      E_R1_COMPUTE,
+      E_R1_CHECK,
+      E_R1_CHECK_BRANCH,
+      E_R1_REMOVE,
+      
+      E_R2_COMPUTE,
+      E_R2_CHECK,
+      E_R2_CHECK_BRANCH,
+      E_R2_REMOVE,
+      
+      E_R3_COMPUTE,
+      E_R3_CHECK,
+      E_R3_CHECK_BRANCH,
+      E_R3_REMOVE,
+      
+      E_R4_COMPUTE,
+      E_R4_CHECK,
+      E_R4_CHECK_BRANCH,
+      E_R4_REMOVE,
+      
+      E_R1_NZ_CHECK,
+      E_R1_REMOVE_ONE,
+      
+      E_R2_NZ_CHECK,
+      E_R2_REMOVE_ONE,
+      
+      E_R3_NZ_CHECK,
+      E_R3_REMOVE_ONE,
+      
+      E_R4_REMOVE_ONE,
+      
+      SUM_12,
+      SUM_123,
+      SUM_1234,
+      CHECK_SUM,
+      
+      END
+    };
+  }
+
+  always {
+    halted = 0;
+    alufn = 0;
+    asel = 0; 
+    bsel = 0;
+    wdsel = 0;
+    regfile_we = 0;
+    regfile_write_address = Reg.CONST_ZERO;
+    regfile_read_address_a = 0000;
+    regfile_read_address_b = 0000;
+    
+    if (rst) {
+      game_fsm.d = game_fsm.START;
+    } else {
+      case (game_fsm.q) {
+        game_fsm.START:
+          if (dip_first_player) {
+            game_fsm.d = game_fsm.TOGGLE_PLAYER;
+          } else {
+            game_fsm.d = game_fsm.P_FISRT_SEL;
+          }
+        
+        game_fsm.TOGGLE_PLAYER:
+          alufn = Alufn.NOTA;
+          regfile_read_address_a = Reg.PLAYER;
+          asel = ASel.REG_A;
+          regfile_we = 1;
+          regfile_write_address = Reg.PLAYER;
+          
+          game_fsm.d = game_fsm.TOGGLE_PE;
+        
+        game_fsm.TOGGLE_PE:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.PLAYER;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (~alu_z & dip_pve) {
+          // Computer's turn
+            game_fsm.d = game_fsm.XOR_12;
+          } else {
+            game_fsm.d = game_fsm.P_FISRT_SEL;
+          }
+          
+        game_fsm.P_FISRT_SEL:
+          case (c{btn_r1, btn_r2, btn_r3, btn_r4}) {
+            b1000: game_fsm.d = game_fsm.P_R1_FIRST;
+            b0100: game_fsm.d = game_fsm.P_R2_FIRST;
+            b0010: game_fsm.d = game_fsm.P_R3_FIRST;
+            b0001: game_fsm.d = game_fsm.P_R4_FIRST;
+            default: game_fsm.d = game_fsm.P_FISRT_SEL;
+          }
+        
+        // =====================================
+        // =========== FIRST ROW ===============
+        // =====================================
+        
+        game_fsm.P_R1_FIRST:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.P_FISRT_SEL;
+          } else {
+            game_fsm.d = game_fsm.P_R1_REMOVE;
+          }
+        
+        game_fsm.P_R1_REMOVE:
+          alufn = Alufn.SUB;
+          regfile_read_address_a = Reg.ROW1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_1;
+          regfile_write_address = Reg.ROW1;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.P_R1_IDLE;
+        
+        game_fsm.P_R1_IDLE:
+          if (btn_r1) {
+            game_fsm.d = game_fsm.P_R1_CHECK;
+          } else if (btn_toggle) {
+            game_fsm.d = game_fsm.SUM_12;
+          } else {
+            game_fsm.d = game_fsm.P_R1_IDLE;
+          }
+        
+        game_fsm.P_R1_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.P_R1_IDLE;
+          } else {
+            game_fsm.d = game_fsm.P_R1_REMOVE;
+          }
+        
+        // =====================================
+        // ========== SECOND ROW ===============
+        // =====================================
+
+        game_fsm.P_R2_FIRST:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.P_FISRT_SEL;
+          } else {
+            game_fsm.d = game_fsm.P_R2_REMOVE;
+          }
+        
+        game_fsm.P_R2_REMOVE:
+          alufn = Alufn.SUB;
+          regfile_read_address_a = Reg.ROW2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_1;
+          regfile_write_address = Reg.ROW2;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.P_R2_IDLE;
+        
+        game_fsm.P_R2_IDLE:
+          if (btn_r2) {
+            game_fsm.d = game_fsm.P_R2_CHECK;
+          } else if (btn_toggle) {
+            game_fsm.d = game_fsm.SUM_12;
+          } else {
+            game_fsm.d = game_fsm.P_R2_IDLE;
+          }
+        
+        game_fsm.P_R2_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.P_R2_IDLE;
+          } else {
+            game_fsm.d = game_fsm.P_R2_REMOVE;
+          }
+        
+        // =====================================
+        // =========== THIRD ROW ===============
+        // =====================================
+        
+        game_fsm.P_R3_FIRST:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW3;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.P_FISRT_SEL;
+          } else {
+            game_fsm.d = game_fsm.P_R3_REMOVE;
+          }
+        
+        game_fsm.P_R3_REMOVE:
+          alufn = Alufn.SUB;
+          regfile_read_address_a = Reg.ROW3;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_1;
+          regfile_write_address = Reg.ROW3;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.P_R3_IDLE;
+        
+        game_fsm.P_R3_IDLE:
+          if (btn_r3) {
+            game_fsm.d = game_fsm.P_R3_CHECK;
+          } else if (btn_toggle) {
+            game_fsm.d = game_fsm.SUM_12;
+          } else {
+            game_fsm.d = game_fsm.P_R3_IDLE;
+          }
+        
+        game_fsm.P_R3_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW3;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.P_R3_IDLE;
+          } else {
+            game_fsm.d = game_fsm.P_R3_REMOVE;
+          }
+        
+        // =====================================
+        // ========== FOURTH ROW ===============
+        // =====================================
+        
+        game_fsm.P_R4_FIRST:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW4;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.P_FISRT_SEL;
+          } else {
+            game_fsm.d = game_fsm.P_R4_REMOVE;
+          }
+        
+        game_fsm.P_R4_REMOVE:
+          alufn = Alufn.SUB;
+          regfile_read_address_a = Reg.ROW4;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_1;
+          regfile_write_address = Reg.ROW4;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.P_R4_IDLE;
+        
+        game_fsm.P_R4_IDLE:
+          if (btn_r4) {
+            game_fsm.d = game_fsm.P_R4_CHECK;
+          } else if (btn_toggle) {
+            game_fsm.d = game_fsm.SUM_12;
+          } else {
+            game_fsm.d = game_fsm.P_R4_IDLE;
+          }
+        
+        game_fsm.P_R4_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW4;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.P_R4_IDLE;
+          } else {
+            game_fsm.d = game_fsm.P_R4_REMOVE;
+          }
+        
+        // =====================================
+        // ============ PVE MODE ===============
+        // =====================================
+        game_fsm.XOR_12:
+          alufn = Alufn.XOR;
+          regfile_read_address_a = Reg.ROW1;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW2;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R0;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.XOR_123;
+        
+        game_fsm.XOR_123:
+          alufn = Alufn.XOR;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW3;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R0;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.XOR_1234;
+        
+        game_fsm.XOR_1234:
+          alufn = Alufn.XOR;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW4;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R0;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R1_COMPUTE;
+        
+        game_fsm.E_R1_COMPUTE:
+          alufn = Alufn.XOR;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW1;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R1;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R1_CHECK;
+        
+        game_fsm.E_R1_CHECK:
+          alufn = Alufn.CMPLT;
+          regfile_read_address_a = Reg.R1;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW1;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R2;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R1_CHECK_BRANCH;
+        
+        game_fsm.E_R1_CHECK_BRANCH:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.E_R2_COMPUTE;
+          } else {
+            game_fsm.d = game_fsm.E_R1_REMOVE;
+          }
+        
+        game_fsm.E_R1_REMOVE:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          regfile_write_address = Reg.ROW1;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_12;
+        
+        game_fsm.E_R2_COMPUTE:
+          alufn = Alufn.XOR;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW2;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R1;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R2_CHECK;
+        
+        game_fsm.E_R2_CHECK:
+          alufn = Alufn.CMPLT;
+          regfile_read_address_a = Reg.R1;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW2;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R2;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R2_CHECK_BRANCH;
+        
+        game_fsm.E_R2_CHECK_BRANCH:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.E_R3_COMPUTE;
+          } else {
+            game_fsm.d = game_fsm.E_R2_REMOVE;
+          }
+        
+        game_fsm.E_R2_REMOVE:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          regfile_write_address = Reg.ROW2;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_12;
+        
+        game_fsm.E_R3_COMPUTE:
+          alufn = Alufn.XOR;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW3;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R1;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R3_CHECK;
+        
+        game_fsm.E_R3_CHECK:
+          alufn = Alufn.CMPLT;
+          regfile_read_address_a = Reg.R1;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW3;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R2;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R3_CHECK_BRANCH;
+        
+        game_fsm.E_R3_CHECK_BRANCH:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.E_R4_COMPUTE;
+          } else {
+            game_fsm.d = game_fsm.E_R3_REMOVE;
+          }
+        
+        game_fsm.E_R3_REMOVE:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          regfile_write_address = Reg.ROW3;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_12;
+        
+        game_fsm.E_R4_COMPUTE:
+          alufn = Alufn.XOR;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW4;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R1;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R4_CHECK;
+        
+        game_fsm.E_R4_CHECK:
+          alufn = Alufn.CMPLT;
+          regfile_read_address_a = Reg.R1;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW4;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R2;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.E_R4_CHECK_BRANCH;
+        
+        game_fsm.E_R4_CHECK_BRANCH:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.E_R2_NZ_CHECK;
+          } else {
+            game_fsm.d = game_fsm.E_R4_REMOVE;
+          }
+        
+        game_fsm.E_R4_REMOVE:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          regfile_write_address = Reg.ROW4;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_12;
+        
+        game_fsm.E_R2_NZ_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.E_R3_NZ_CHECK;
+          } else {
+            game_fsm.d = game_fsm.E_R2_REMOVE_ONE;
+          }
+        
+        game_fsm.E_R3_NZ_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW3;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.E_R1_NZ_CHECK;
+          } else {
+            game_fsm.d = game_fsm.E_R3_REMOVE_ONE;
+          }
+        
+        game_fsm.E_R1_NZ_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.E_R4_REMOVE_ONE;
+          } else {
+            game_fsm.d = game_fsm.E_R1_REMOVE_ONE;
+          }
+        
+        game_fsm.E_R1_REMOVE_ONE:
+          alufn = Alufn.SUB;
+          regfile_read_address_a = Reg.ROW1;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_1;
+          regfile_write_address = Reg.ROW1;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_12;
+        
+        game_fsm.E_R2_REMOVE_ONE:
+          alufn = Alufn.SUB;
+          regfile_read_address_a = Reg.ROW2;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_1;
+          regfile_write_address = Reg.ROW2;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_12;
+        
+        game_fsm.E_R3_REMOVE_ONE:
+          alufn = Alufn.SUB;
+          regfile_read_address_a = Reg.ROW3;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_1;
+          regfile_write_address = Reg.ROW3;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_12;
+        
+        game_fsm.E_R4_REMOVE_ONE:
+          alufn = Alufn.SUB;
+          regfile_read_address_a = Reg.ROW4;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_1;
+          regfile_write_address = Reg.ROW4;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_12;
+        
+        
+        // =====================================
+        // ========= CHECK WINNER ==============
+        // =====================================
+        
+        game_fsm.SUM_12:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW1;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW2;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R0;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_123;
+        
+        game_fsm.SUM_123:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW3;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R0;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.SUM_1234;
+        
+        game_fsm.SUM_1234:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          regfile_read_address_b = Reg.ROW4;
+          bsel = BSel.REG_B;
+          
+          regfile_write_address = Reg.R0;
+          regfile_we = 1;
+          
+          game_fsm.d = game_fsm.CHECK_SUM;
+        
+        game_fsm.CHECK_SUM:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R0;
+          asel = ASel.REG_A;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+            game_fsm.d = game_fsm.END;
+          } else {
+            game_fsm.d = game_fsm.TOGGLE_PLAYER;
+          }
+        
+        game_fsm.END:
+          halted = 1;
+          game_fsm.d = game_fsm.END;
+      }
+    }
+  }
+}

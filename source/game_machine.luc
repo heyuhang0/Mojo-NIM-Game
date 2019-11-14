@@ -1,0 +1,108 @@
+global ASel {
+  const REG_A = 0;
+  const CONST_0 = 1;
+}
+
+global BSel {
+  const REG_B = 0;
+  const CONST_0 = 1;
+  const CONST_1 = 2;
+}
+
+global WDSel {
+  const ALU_OUT = 0;
+  const CONST_0 = 1;
+}
+
+module game_machine (
+    input clk,  // clock
+    input rst,  // reset
+    
+    input btn_r1,
+    input btn_r2,
+    input btn_r3,
+    input btn_r4,
+    input btn_toggle,
+    input dip_first_player,
+    input dip_pve,
+    
+    output led_r1[8],
+    output led_r2[8],
+    output led_r3[8],
+    output led_r4[8],
+    output led_player,
+    output led_end
+  ) {
+  
+  .clk(clk) {
+    .rst(rst) {
+      game_fsm game_controlunit;
+      game_regfiles regfiles;
+    }
+  }
+  
+  alu game_alu;
+  
+  sig inputAlu_a[16];
+  sig inputAlu_b[16];
+  
+  stones_decoder r1_decoder(.in(regfiles.display[2:0]));
+  stones_decoder r2_decoder(.in(regfiles.display[5:3]));
+  stones_decoder r3_decoder(.in(regfiles.display[8:6]));
+  stones_decoder r4_decoder(.in(regfiles.display[11:9]));
+  
+  always {
+    // game control unit input
+    game_controlunit.btn_r1 = btn_r1;
+    game_controlunit.btn_r2 = btn_r2;
+    game_controlunit.btn_r3 = btn_r3;
+    game_controlunit.btn_r4 = btn_r4;
+    game_controlunit.btn_toggle = btn_toggle;
+    game_controlunit.dip_first_player = dip_first_player;
+    game_controlunit.dip_pve = dip_pve;
+    
+    game_controlunit.alu_z = game_alu.z;
+  
+    // setup REGFILE unit 
+    regfiles.we = game_controlunit.regfile_we;
+    regfiles.write_address = game_controlunit.regfile_write_address;
+   
+    regfiles.read_address_a = game_controlunit.regfile_read_address_a;
+    regfiles.read_address_b = game_controlunit.regfile_read_address_b;
+    
+    // asel mux
+    case(game_controlunit.asel) {
+      ASel.REG_A:   inputAlu_a = regfiles.out_a;
+      ASel.CONST_0: inputAlu_a = 0;
+      default: inputAlu_a = 0;
+    }
+    
+    // bsel mux
+    case(game_controlunit.bsel) {
+      BSel.REG_B:   inputAlu_b = regfiles.out_b;
+      BSel.CONST_0: inputAlu_b = 0;
+      BSel.CONST_1: inputAlu_b = 1;
+      default : inputAlu_b = 0;
+    }
+    
+    // alu
+    game_alu.a = inputAlu_a;
+    game_alu.b = inputAlu_b;
+    game_alu.alufn = game_controlunit.alufn;
+    
+    // wdsel mux
+    case (game_controlunit.wdsel) {
+      WDSel.ALU_OUT: regfiles.data = game_alu.out;
+      WDSel.CONST_0: regfiles.data = 0;
+      default: regfiles.data = 0;
+    }
+    
+    // display
+    led_r1 = r1_decoder.out;
+    led_r2 = r2_decoder.out;
+    led_r3 = r3_decoder.out;
+    led_r4 = r4_decoder.out;
+    led_player = regfiles.display[12];
+    led_end = game_controlunit.halted;
+  }
+}

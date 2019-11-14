@@ -1,17 +1,7 @@
-global ASel {
-  const REG_A = 0;
-  const CONST_0 = 1;
-}
-
 global BSel {
   const REG_B = 0;
   const CONST_0 = 1;
   const CONST_1 = 2;
-}
-
-global WDSel {
-  const ALU_OUT = 0;
-  const CONST_0 = 1;
 }
 
 module game_machine (
@@ -43,7 +33,6 @@ module game_machine (
   
   alu game_alu;
   
-  sig inputAlu_a[16];
   sig inputAlu_b[16];
   
   stones_decoder r1_decoder(.in(regfiles.display[2:0]));
@@ -66,16 +55,10 @@ module game_machine (
     // setup REGFILE unit 
     regfiles.we = game_controlunit.regfile_we;
     regfiles.write_address = game_controlunit.regfile_write_address;
+    regfiles.data = game_alu.out;
    
     regfiles.read_address_a = game_controlunit.regfile_read_address_a;
     regfiles.read_address_b = game_controlunit.regfile_read_address_b;
-    
-    // asel mux
-    case(game_controlunit.asel) {
-      ASel.REG_A:   inputAlu_a = regfiles.out_a;
-      ASel.CONST_0: inputAlu_a = 0;
-      default: inputAlu_a = 0;
-    }
     
     // bsel mux
     case(game_controlunit.bsel) {
@@ -86,16 +69,9 @@ module game_machine (
     }
     
     // alu
-    game_alu.a = inputAlu_a;
+    game_alu.a = regfiles.out_a;
     game_alu.b = inputAlu_b;
     game_alu.alufn = game_controlunit.alufn;
-    
-    // wdsel mux
-    case (game_controlunit.wdsel) {
-      WDSel.ALU_OUT: regfiles.data = game_alu.out;
-      WDSel.CONST_0: regfiles.data = 0;
-      default: regfiles.data = 0;
-    }
     
     // display
     led_r1 = r1_decoder.out;

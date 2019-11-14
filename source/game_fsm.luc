@@ -13,9 +13,7 @@ module game_fsm (
     input alu_z,
     
     output alufn[6],
-    output asel[2],
     output bsel[2],
-    output wdsel[2],
     output regfile_we,
     output regfile_write_address[4],
     output regfile_read_address_a[4],
@@ -99,9 +97,7 @@ module game_fsm (
   always {
     halted = 0;
     alufn = 0;
-    asel = 0; 
     bsel = 0;
-    wdsel = 0;
     regfile_we = 0;
     regfile_write_address = Reg.CONST_ZERO;
     regfile_read_address_a = 0000;
@@ -121,7 +117,6 @@ module game_fsm (
         game_fsm.TOGGLE_PLAYER:
           alufn = Alufn.NOTA;
           regfile_read_address_a = Reg.PLAYER;
-          asel = ASel.REG_A;
           regfile_we = 1;
           regfile_write_address = Reg.PLAYER;
           
@@ -130,7 +125,6 @@ module game_fsm (
         game_fsm.TOGGLE_PE:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.PLAYER;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (~alu_z & dip_pve) {
@@ -156,7 +150,6 @@ module game_fsm (
         game_fsm.P_R1_FIRST:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -168,7 +161,6 @@ module game_fsm (
         game_fsm.P_R1_REMOVE:
           alufn = Alufn.SUB;
           regfile_read_address_a = Reg.ROW1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_1;
           regfile_write_address = Reg.ROW1;
           regfile_we = 1;
@@ -187,7 +179,6 @@ module game_fsm (
         game_fsm.P_R1_CHECK:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -203,7 +194,6 @@ module game_fsm (
         game_fsm.P_R2_FIRST:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -215,7 +205,6 @@ module game_fsm (
         game_fsm.P_R2_REMOVE:
           alufn = Alufn.SUB;
           regfile_read_address_a = Reg.ROW2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_1;
           regfile_write_address = Reg.ROW2;
           regfile_we = 1;
@@ -234,7 +223,6 @@ module game_fsm (
         game_fsm.P_R2_CHECK:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -250,7 +238,6 @@ module game_fsm (
         game_fsm.P_R3_FIRST:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW3;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -262,7 +249,6 @@ module game_fsm (
         game_fsm.P_R3_REMOVE:
           alufn = Alufn.SUB;
           regfile_read_address_a = Reg.ROW3;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_1;
           regfile_write_address = Reg.ROW3;
           regfile_we = 1;
@@ -281,7 +267,6 @@ module game_fsm (
         game_fsm.P_R3_CHECK:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW3;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -297,7 +282,6 @@ module game_fsm (
         game_fsm.P_R4_FIRST:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW4;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -309,7 +293,6 @@ module game_fsm (
         game_fsm.P_R4_REMOVE:
           alufn = Alufn.SUB;
           regfile_read_address_a = Reg.ROW4;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_1;
           regfile_write_address = Reg.ROW4;
           regfile_we = 1;
@@ -328,7 +311,6 @@ module game_fsm (
         game_fsm.P_R4_CHECK:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW4;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -343,7 +325,6 @@ module game_fsm (
         game_fsm.XOR_12:
           alufn = Alufn.XOR;
           regfile_read_address_a = Reg.ROW1;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW2;
           bsel = BSel.REG_B;
           
@@ -355,7 +336,6 @@ module game_fsm (
         game_fsm.XOR_123:
           alufn = Alufn.XOR;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW3;
           bsel = BSel.REG_B;
           
@@ -367,7 +347,6 @@ module game_fsm (
         game_fsm.XOR_1234:
           alufn = Alufn.XOR;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW4;
           bsel = BSel.REG_B;
           
@@ -379,7 +358,6 @@ module game_fsm (
         game_fsm.E_R1_COMPUTE:
           alufn = Alufn.XOR;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW1;
           bsel = BSel.REG_B;
           
@@ -391,7 +369,6 @@ module game_fsm (
         game_fsm.E_R1_CHECK:
           alufn = Alufn.CMPLT;
           regfile_read_address_a = Reg.R1;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW1;
           bsel = BSel.REG_B;
           
@@ -403,7 +380,6 @@ module game_fsm (
         game_fsm.E_R1_CHECK_BRANCH:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -415,7 +391,6 @@ module game_fsm (
         game_fsm.E_R1_REMOVE:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           regfile_write_address = Reg.ROW1;
@@ -426,7 +401,6 @@ module game_fsm (
         game_fsm.E_R2_COMPUTE:
           alufn = Alufn.XOR;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW2;
           bsel = BSel.REG_B;
           
@@ -438,7 +412,6 @@ module game_fsm (
         game_fsm.E_R2_CHECK:
           alufn = Alufn.CMPLT;
           regfile_read_address_a = Reg.R1;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW2;
           bsel = BSel.REG_B;
           
@@ -450,7 +423,6 @@ module game_fsm (
         game_fsm.E_R2_CHECK_BRANCH:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -462,7 +434,6 @@ module game_fsm (
         game_fsm.E_R2_REMOVE:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           regfile_write_address = Reg.ROW2;
@@ -473,7 +444,6 @@ module game_fsm (
         game_fsm.E_R3_COMPUTE:
           alufn = Alufn.XOR;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW3;
           bsel = BSel.REG_B;
           
@@ -485,7 +455,6 @@ module game_fsm (
         game_fsm.E_R3_CHECK:
           alufn = Alufn.CMPLT;
           regfile_read_address_a = Reg.R1;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW3;
           bsel = BSel.REG_B;
           
@@ -497,7 +466,6 @@ module game_fsm (
         game_fsm.E_R3_CHECK_BRANCH:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -509,7 +477,6 @@ module game_fsm (
         game_fsm.E_R3_REMOVE:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           regfile_write_address = Reg.ROW3;
@@ -520,7 +487,6 @@ module game_fsm (
         game_fsm.E_R4_COMPUTE:
           alufn = Alufn.XOR;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW4;
           bsel = BSel.REG_B;
           
@@ -532,7 +498,6 @@ module game_fsm (
         game_fsm.E_R4_CHECK:
           alufn = Alufn.CMPLT;
           regfile_read_address_a = Reg.R1;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW4;
           bsel = BSel.REG_B;
           
@@ -544,7 +509,6 @@ module game_fsm (
         game_fsm.E_R4_CHECK_BRANCH:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -556,7 +520,6 @@ module game_fsm (
         game_fsm.E_R4_REMOVE:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           regfile_write_address = Reg.ROW4;
@@ -567,7 +530,6 @@ module game_fsm (
         game_fsm.E_R2_NZ_CHECK:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -579,7 +541,6 @@ module game_fsm (
         game_fsm.E_R3_NZ_CHECK:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW3;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -591,7 +552,6 @@ module game_fsm (
         game_fsm.E_R1_NZ_CHECK:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {
@@ -603,7 +563,6 @@ module game_fsm (
         game_fsm.E_R1_REMOVE_ONE:
           alufn = Alufn.SUB;
           regfile_read_address_a = Reg.ROW1;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_1;
           regfile_write_address = Reg.ROW1;
           regfile_we = 1;
@@ -613,7 +572,6 @@ module game_fsm (
         game_fsm.E_R2_REMOVE_ONE:
           alufn = Alufn.SUB;
           regfile_read_address_a = Reg.ROW2;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_1;
           regfile_write_address = Reg.ROW2;
           regfile_we = 1;
@@ -623,7 +581,6 @@ module game_fsm (
         game_fsm.E_R3_REMOVE_ONE:
           alufn = Alufn.SUB;
           regfile_read_address_a = Reg.ROW3;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_1;
           regfile_write_address = Reg.ROW3;
           regfile_we = 1;
@@ -633,7 +590,6 @@ module game_fsm (
         game_fsm.E_R4_REMOVE_ONE:
           alufn = Alufn.SUB;
           regfile_read_address_a = Reg.ROW4;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_1;
           regfile_write_address = Reg.ROW4;
           regfile_we = 1;
@@ -648,7 +604,6 @@ module game_fsm (
         game_fsm.SUM_12:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.ROW1;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW2;
           bsel = BSel.REG_B;
           
@@ -660,7 +615,6 @@ module game_fsm (
         game_fsm.SUM_123:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW3;
           bsel = BSel.REG_B;
           
@@ -672,7 +626,6 @@ module game_fsm (
         game_fsm.SUM_1234:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           regfile_read_address_b = Reg.ROW4;
           bsel = BSel.REG_B;
           
@@ -684,7 +637,6 @@ module game_fsm (
         game_fsm.CHECK_SUM:
           alufn = Alufn.ADD;
           regfile_read_address_a = Reg.R0;
-          asel = ASel.REG_A;
           bsel = BSel.CONST_0;
           
           if (alu_z) {

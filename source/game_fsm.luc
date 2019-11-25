@@ -13,6 +13,7 @@ module game_fsm (
     input alu_z,
     
     output alufn[6],
+    output asel[2],
     output bsel[2],
     output regfile_we,
     output regfile_write_address[3],
@@ -23,6 +24,14 @@ module game_fsm (
   
   .clk(clk) {
     fsm game_fsm = {
+      INIT_ROW1,
+      INIT_ROW1_CHECK,
+      INIT_ROW2,
+      INIT_ROW2_CHECK,
+      INIT_ROW3,
+      INIT_ROW3_CHECK,
+      INIT_ROW4,
+      INIT_ROW4_CHECK,
       START,
       
       TOGGLE_PLAYER,
@@ -97,16 +106,101 @@ module game_fsm (
   always {
     halted = 0;
     alufn = 0;
-    bsel = 0;
+    asel = ASel.REG_A;
+    bsel = BSel.REG_B;
     regfile_we = 0;
     regfile_write_address = 0;
     regfile_read_address_a = 0;
     regfile_read_address_b = 0;
     
     if (rst) {
-      game_fsm.d = game_fsm.START;
+      game_fsm.d = game_fsm.INIT_ROW1;
     } else {
       case (game_fsm.q) {
+        game_fsm.INIT_ROW1:
+          alufn = Alufn.AND;
+          asel = ASel.RANDOM;
+          bsel = BSel.CONST_7;
+          
+          regfile_we = 1;
+          regfile_write_address = Reg.ROW1;
+
+          game_fsm.d = game_fsm.INIT_ROW1_CHECK;
+        
+        game_fsm.INIT_ROW1_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW1;
+          bsel = BSel.CONST_0;
+
+          if (alu_z) {
+            game_fsm.d = game_fsm.INIT_ROW1;
+          } else {
+            game_fsm.d = game_fsm.INIT_ROW2;
+          }
+        
+        game_fsm.INIT_ROW2:
+          alufn = Alufn.AND;
+          asel = ASel.RANDOM;
+          bsel = BSel.CONST_7;
+          
+          regfile_we = 1;
+          regfile_write_address = Reg.ROW2;
+          
+          game_fsm.d = game_fsm.INIT_ROW2_CHECK;
+        
+        game_fsm.INIT_ROW2_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW2;
+          bsel = BSel.CONST_0;
+
+          if (alu_z) {
+            game_fsm.d = game_fsm.INIT_ROW2;
+          } else {
+            game_fsm.d = game_fsm.INIT_ROW3;
+          }
+        
+        game_fsm.INIT_ROW3:
+          alufn = Alufn.AND;
+          asel = ASel.RANDOM;
+          bsel = BSel.CONST_7;
+          
+          regfile_we = 1;
+          regfile_write_address = Reg.ROW3;
+          
+          game_fsm.d = game_fsm.INIT_ROW3_CHECK;
+        
+        game_fsm.INIT_ROW3_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW3;
+          bsel = BSel.CONST_0;
+
+          if (alu_z) {
+            game_fsm.d = game_fsm.INIT_ROW3;
+          } else {
+            game_fsm.d = game_fsm.INIT_ROW4;
+          }
+        
+        game_fsm.INIT_ROW4:
+          alufn = Alufn.AND;
+          asel = ASel.RANDOM;
+          bsel = BSel.CONST_7;
+          
+          regfile_we = 1;
+          regfile_write_address = Reg.ROW4;
+          
+          game_fsm.d = game_fsm.INIT_ROW4_CHECK;
+        
+        game_fsm.INIT_ROW4_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.ROW4;
+          bsel = BSel.CONST_0;
+
+          if (alu_z) {
+            game_fsm.d = game_fsm.INIT_ROW4;
+          } else {
+            game_fsm.d = game_fsm.START;
+          }
+        
         game_fsm.START:
           if (dip_first_player) {
             game_fsm.d = game_fsm.TOGGLE_PLAYER;

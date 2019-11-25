@@ -1,7 +1,13 @@
+global ASel {
+  const REG_A = 0;
+  const RANDOM = 1;
+}
+
 global BSel {
   const REG_B = 0;
   const CONST_0 = 1;
   const CONST_1 = 2;
+  const CONST_7 = 3;
 }
 
 module game_machine (
@@ -29,10 +35,12 @@ module game_machine (
       game_fsm game_controlunit;
       game_regfiles regfiles;
     }
+    random_gen random_gen;
   }
   
   alu game_alu;
   
+  sig inputAlu_a[16];
   sig inputAlu_b[16];
   
   stones_decoder r1_decoder(.in(regfiles.display[2:0]));
@@ -60,16 +68,24 @@ module game_machine (
     regfiles.read_address_a = game_controlunit.regfile_read_address_a;
     regfiles.read_address_b = game_controlunit.regfile_read_address_b;
     
+    // asel mux
+    case(game_controlunit.asel) {
+      ASel.REG_A:   inputAlu_a = regfiles.out_a;
+      ASel.RANDOM:  inputAlu_a = random_gen.num;
+      default:      inputAlu_a = 0;
+    }
+    
     // bsel mux
     case(game_controlunit.bsel) {
       BSel.REG_B:   inputAlu_b = regfiles.out_b;
       BSel.CONST_0: inputAlu_b = 0;
       BSel.CONST_1: inputAlu_b = 1;
+      BSel.CONST_7: inputAlu_b = 7;
       default : inputAlu_b = 0;
     }
     
     // alu
-    game_alu.a = regfiles.out_a;
+    game_alu.a = inputAlu_a;
     game_alu.b = inputAlu_b;
     game_alu.alufn = game_controlunit.alufn;
     

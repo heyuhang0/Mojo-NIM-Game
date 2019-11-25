@@ -32,10 +32,10 @@ module game_regfiles (
       dff r1[16];
       dff r2[16];
       // number of stones in each row
-      dff row1_stones[16](#INIT(1));
-      dff row2_stones[16](#INIT(3));
-      dff row3_stones[16](#INIT(5));
-      dff row4_stones[16](#INIT(7));
+      dff row1_stones[16];
+      dff row2_stones[16];
+      dff row3_stones[16];
+      dff row4_stones[16];
       // current player
       dff player[16];
     }

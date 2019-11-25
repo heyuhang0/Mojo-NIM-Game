@@ -60,18 +60,17 @@ module mojo_top (
     machine.btn_r3 = btn_r3.out;
     machine.btn_r4 = btn_r4.out;
     machine.btn_toggle = btn_toggle.out;
-    machine.dip_first_player = io_dip[0][0];
-    machine.dip_pve = io_dip[0][1];
+    machine.num_players = io_dip[0][1:0];
     
     io_led[2] = machine.led_r1;
     io_led[1] = machine.led_r2;
     io_led[0] = machine.led_r3;
     led = machine.led_r4;
     
-    io_sel = b1100;
-    io_seg[0] = machine.led_player;
-    io_seg[1] = ~machine.led_player;
-    io_seg[2] = ~machine.led_end;
-    
+    io_sel[3] = ~machine.led_player1;
+    io_sel[2] = ~machine.led_player2;
+    io_sel[1] = ~machine.led_player3;
+    io_sel[0] = ~machine.led_end;
+    io_seg = 0;
   }
 }

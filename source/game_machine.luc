@@ -1,6 +1,8 @@
 global ASel {
   const REG_A = 0;
   const RANDOM = 1;
+  const CONST_2 = 2;
+  const CONST_3 = 3;
 }
 
 global BSel {
@@ -19,14 +21,15 @@ module game_machine (
     input btn_r3,
     input btn_r4,
     input btn_toggle,
-    input dip_first_player,
-    input dip_pve,
+    input num_players[2],
     
     output led_r1[8],
     output led_r2[8],
     output led_r3[8],
     output led_r4[8],
-    output led_player,
+    output led_player1,
+    output led_player2,
+    output led_player3,
     output led_end
   ) {
   
@@ -55,8 +58,7 @@ module game_machine (
     game_controlunit.btn_r3 = btn_r3;
     game_controlunit.btn_r4 = btn_r4;
     game_controlunit.btn_toggle = btn_toggle;
-    game_controlunit.dip_first_player = dip_first_player;
-    game_controlunit.dip_pve = dip_pve;
+    game_controlunit.num_players = num_players;
     
     game_controlunit.alu_z = game_alu.z;
   
@@ -72,6 +74,8 @@ module game_machine (
     case(game_controlunit.asel) {
       ASel.REG_A:   inputAlu_a = regfiles.out_a;
       ASel.RANDOM:  inputAlu_a = random_gen.num;
+      ASel.CONST_2: inputAlu_a = 2;
+      ASel.CONST_3: inputAlu_a = 3;
       default:      inputAlu_a = 0;
     }
     
@@ -94,7 +98,14 @@ module game_machine (
     led_r2 = r2_decoder.out;
     led_r3 = r3_decoder.out;
     led_r4 = r4_decoder.out;
-    led_player = regfiles.display[12];
+    led_player1 = 0;
+    led_player2 = 0;
+    led_player3 = 0;
+    case (regfiles.display[13:12]) {
+      0: led_player1 = 1;
+      1: led_player2 = 1;
+      2: led_player3 = 1;
+    }
     led_end = game_controlunit.halted;
   }
 }

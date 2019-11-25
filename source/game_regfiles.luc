@@ -84,6 +84,6 @@ module game_regfiles (
     display[5:3] = row2_stones.q[2:0];
     display[8:6] = row3_stones.q[2:0];
     display[11:9] = row4_stones.q[2:0];
-    display[12] = player.q[0];
+    display[13:12] = player.q[1:0];
   }
 }

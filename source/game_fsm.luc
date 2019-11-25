@@ -7,8 +7,7 @@ module game_fsm (
     input btn_r3,
     input btn_r4,
     input btn_toggle,
-    input dip_first_player,
-    input dip_pve,
+    input num_players[2],
     
     input alu_z,
     
@@ -35,7 +34,12 @@ module game_fsm (
       START,
       
       TOGGLE_PLAYER,
-      TOGGLE_PE,
+      TOGGLE_PLAYER_1,
+      TOGGLE_PLAYER_2,
+      TOGGLE_PLAYER_3,
+      TOGGLE_PLAYER_PVE_CHECK,
+      TOGGLE_PLAYER_PVP_CHECK,
+      TOGGLE_PLAYER_RESET,
       
       P_FISRT_SEL,
       
@@ -114,9 +118,12 @@ module game_fsm (
     regfile_read_address_b = 0;
     
     if (rst) {
-      game_fsm.d = game_fsm.INIT_ROW1;
+      game_fsm.d = game_fsm.START;
     } else {
-      case (game_fsm.q) {
+      case (game_fsm.q) {     
+        game_fsm.START:
+          game_fsm.d = game_fsm.INIT_ROW1;
+        
         game_fsm.INIT_ROW1:
           alufn = Alufn.AND;
           asel = ASel.RANDOM;
@@ -198,35 +205,81 @@ module game_fsm (
           if (alu_z) {
             game_fsm.d = game_fsm.INIT_ROW4;
           } else {
-            game_fsm.d = game_fsm.START;
-          }
-        
-        game_fsm.START:
-          if (dip_first_player) {
-            game_fsm.d = game_fsm.TOGGLE_PLAYER;
-          } else {
             game_fsm.d = game_fsm.P_FISRT_SEL;
           }
         
         game_fsm.TOGGLE_PLAYER:
-          alufn = Alufn.NOTA;
+          alufn = Alufn.ADD;
           regfile_read_address_a = Reg.PLAYER;
+          bsel = BSel.CONST_1;
           regfile_we = 1;
           regfile_write_address = Reg.PLAYER;
           
-          game_fsm.d = game_fsm.TOGGLE_PE;
+          case (num_players) {
+            1: game_fsm.d = game_fsm.TOGGLE_PLAYER_1;
+            2: game_fsm.d = game_fsm.TOGGLE_PLAYER_2;
+            3: game_fsm.d = game_fsm.TOGGLE_PLAYER_3;
+            default: game_fsm.d = game_fsm.TOGGLE_PLAYER_1;
+          }
         
-        game_fsm.TOGGLE_PE:
+        game_fsm.TOGGLE_PLAYER_1:
+          alufn = Alufn.CMPLE;
+          asel = ASel.CONST_2;
+          regfile_read_address_b = Reg.PLAYER;
+          regfile_we = 1;
+          regfile_write_address = Reg.R0;
+          
+          game_fsm.d = game_fsm.TOGGLE_PLAYER_PVE_CHECK;
+        
+        game_fsm.TOGGLE_PLAYER_PVE_CHECK:
           alufn = Alufn.ADD;
-          regfile_read_address_a = Reg.PLAYER;
+          regfile_read_address_a = Reg.R0;
           bsel = BSel.CONST_0;
           
-          if (~alu_z & dip_pve) {
-          // Computer's turn
+          if (alu_z) {
+             // if player < 2
             game_fsm.d = game_fsm.XOR_12;
           } else {
-            game_fsm.d = game_fsm.P_FISRT_SEL;
+            game_fsm.d = game_fsm.TOGGLE_PLAYER_RESET;
           }
+        
+        game_fsm.TOGGLE_PLAYER_2:
+          alufn = Alufn.CMPLE;
+          asel = ASel.CONST_2;
+          regfile_read_address_b = Reg.PLAYER;
+          regfile_we = 1;
+          regfile_write_address = Reg.R0;
+          
+          game_fsm.d = game_fsm.TOGGLE_PLAYER_PVP_CHECK;
+          
+        game_fsm.TOGGLE_PLAYER_3:
+          alufn = Alufn.CMPLE;
+          asel = ASel.CONST_3;
+          regfile_read_address_b = Reg.PLAYER;
+          regfile_we = 1;
+          regfile_write_address = Reg.R0;
+          
+          game_fsm.d = game_fsm.TOGGLE_PLAYER_PVP_CHECK;
+        
+        game_fsm.TOGGLE_PLAYER_PVP_CHECK:
+          alufn = Alufn.ADD;
+          regfile_read_address_a = Reg.R0;
+          bsel = BSel.CONST_0;
+          
+          if (alu_z) {
+             // if player < 2
+            game_fsm.d = game_fsm.P_FISRT_SEL;
+          } else {
+            game_fsm.d = game_fsm.TOGGLE_PLAYER_RESET;
+          }
+        
+        
+        game_fsm.TOGGLE_PLAYER_RESET:
+          alufn = Alufn.B;
+          bsel = BSel.CONST_0;
+          regfile_we = 1;
+          regfile_write_address = Reg.PLAYER;
+          game_fsm.d = game_fsm.P_FISRT_SEL;
           
         game_fsm.P_FISRT_SEL:
           case (c{btn_r1, btn_r2, btn_r3, btn_r4}) {

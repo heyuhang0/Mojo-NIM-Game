@@ -12,7 +12,8 @@ module stones_decoder (
       4: out = b00001111;
       5: out = b00011111;
       6: out = b00111111;
-      default: out = b01111111;
+      7: out = b01111111;
+      default: out = 0;
     }
   }
 }

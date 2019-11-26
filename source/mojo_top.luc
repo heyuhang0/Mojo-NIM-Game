@@ -67,10 +67,10 @@ module mojo_top (
     io_led[0] = machine.led_r3;
     led = machine.led_r4;
     
-    io_sel[3] = ~machine.led_player1;
-    io_sel[2] = ~machine.led_player2;
-    io_sel[1] = ~machine.led_player3;
-    io_sel[0] = ~machine.led_end;
+    io_sel[3] = machine.led_player1;
+    io_sel[2] = machine.led_player2;
+    io_sel[1] = machine.led_player3;
+    io_sel[0] = machine.led_end;
     io_seg = 0;
   }
 }

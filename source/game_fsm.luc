@@ -1,3 +1,6 @@
+/* NIM Game FSM (Control Unit)
+*/
+
 module game_fsm (
     input clk,  // clock
     input rst,  // reset
@@ -22,94 +25,124 @@ module game_fsm (
   ) {
   
   .clk(clk) {
+    /* The FSM implements following C-style code
+    // registers
+    short row1, row2, row3, row4;  // number of stones in each row
+    short player;      // current player index, can be 0, 1, 2
+    short R0, R1, R2   // temporary variables
+
+    // imputs
+    bool btn_r1, btn_r2, btn_r3, btn_r4, btn_toggle; // button inputs
+    char num_player;  // number of players, can be 1(for PVE), 2 and 3
+
+    // other functions
+    short rand();      // function that returns 16-bit random integer
+
+    (continues in fsm definition)
+    */
     fsm game_fsm = {
       START,
-      INIT_ROW1,
-      INIT_ROW1_CHECK,
-      INIT_ROW2,
-      INIT_ROW2_CHECK,
-      INIT_ROW2_CHECK_UNIQUE_1,
-      INIT_ROW3,
-      INIT_ROW3_CHECK,
-      INIT_ROW3_CHECK_UNIQUE_1,
-      INIT_ROW3_CHECK_UNIQUE_2,
-      INIT_ROW4,
-      INIT_ROW4_CHECK,
-      INIT_ROW4_CHECK_UNIQUE_1,
-      INIT_ROW4_CHECK_UNIQUE_2,
-      INIT_ROW4_CHECK_UNIQUE_3,
+
+      // randomly initialize number of stones in each row
+      INIT_ROW1,                // row1 = rand();
+      INIT_ROW1_CHECK,          // if (row1 == 0) goto INIT_ROW1;
+      INIT_ROW2,                // row2 = rand();
+      INIT_ROW2_CHECK,          // if (row2 == 0)    goto INIT_ROW2;
+      INIT_ROW2_CHECK_UNIQUE_1, // if (row2 == row1) goto INIT_ROW2;
+      INIT_ROW3,                // row3 = rand();
+      INIT_ROW3_CHECK,          // if (row3 == 0)    goto INIT_ROW3;
+      INIT_ROW3_CHECK_UNIQUE_1, // if (row3 == row1) goto INIT_ROW3;
+      INIT_ROW3_CHECK_UNIQUE_2, // if (row3 == row2) goto INIT_ROW3;
+      INIT_ROW4,                // row4 = rand();
+      INIT_ROW4_CHECK,          // if (row4 == 0)    goto INIT_ROW4;
+      INIT_ROW4_CHECK_UNIQUE_1, // if (row4 == row1) goto INIT_ROW4;
+      INIT_ROW4_CHECK_UNIQUE_2, // if (row4 == row2) goto INIT_ROW4;
+      INIT_ROW4_CHECK_UNIQUE_3, // if (row4 == row3) goto INIT_ROW4;
+                                // else goto P_FIRST_SEL;
       
-      TOGGLE_PLAYER,
-      TOGGLE_PLAYER_1,
-      TOGGLE_PLAYER_2,
-      TOGGLE_PLAYER_3,
-      TOGGLE_PLAYER_PVE_CHECK,
-      TOGGLE_PLAYER_PVP_CHECK,
-      TOGGLE_PLAYER_RESET,
+      // toggle player and goto corresponding player/computer branch
+      TOGGLE_PLAYER,            // player ++; if (num_player == 2) goto TOGGLE_PLAYER_2; else if (num_player == 3) goto TOGGLE_PLAYER_3;
+      TOGGLE_PLAYER_1,          // R0 = (player >= 2); goto TOGGLE_PLAYER_PVE_CHECK;
+      TOGGLE_PLAYER_2,          // R0 = (player >= 2); goto TOGGLE_PLAYER_PVP_CHECK;
+      TOGGLE_PLAYER_3,          // R0 = (player >= 3); goto TOGGLE_PLAYER_PVP_CHECK;
+      TOGGLE_PLAYER_PVE_CHECK,  // if (R0) goto TOGGLE_PLAYER_RESET; else goto XOR_12;
+      TOGGLE_PLAYER_PVP_CHECK,  // if (R0) goto TOGGLE_PLAYER_RESET; else goto P_FISRT_SEL;
+      TOGGLE_PLAYER_RESET,      // R0 = 0;
       
-      P_FISRT_SEL,
+      // human player's turn
+      P_FISRT_SEL,  // if (btn_r1) goto P_R1_FIRST;
+                    // else if (btn_r2) goto P_R2_FIRST;
+                    // else if (btn r3) goto P_R3_FIRST;
+                    // else if (btn r4) goto P_R4_FIRST;
+                    // else goto P_FISRT_SEL; // wait for valid input
       
-      P_R1_FIRST,
-      P_R1_REMOVE,
-      P_R1_IDLE,
-      P_R1_CHECK,
+      P_R1_FIRST,   // if (row1 == 0) goto P_FISRT_SEL;
+      P_R1_REMOVE,  // row1--;
+      P_R1_IDLE,    // if (btn_r1) goto P_R1_CHECK; else if (btn_toggle) goto SUM_12; else goto P_R1_IDLE;
+      P_R1_CHECK,   // if (row1 == 0) goto P_R1_IDLE; else goto P_R1_REMOVE;
       
-      P_R2_FIRST,
-      P_R2_REMOVE,
-      P_R2_IDLE,
-      P_R2_CHECK,
+      P_R2_FIRST,   // if (row2 == 0) goto P_FISRT_SEL;
+      P_R2_REMOVE,  // row2--;
+      P_R2_IDLE,    // if (btn_r2) goto P_R2_CHECK; else if (btn_toggle) goto SUM_12; else goto P_R2_IDLE; 
+      P_R2_CHECK,   // if (row2 == 0) goto P_R2_IDLE; else goto P_R2_REMOVE;
       
-      P_R3_FIRST,
-      P_R3_REMOVE,
-      P_R3_IDLE,
-      P_R3_CHECK,
+      P_R3_FIRST,   // if (row3 == 0) goto P_FISRT_SEL;
+      P_R3_REMOVE,  // row3--;
+      P_R3_IDLE,    // if (btn_r3) goto P_R3_CHECK; else if (btn_toggle) goto SUM_12; else goto P_R3_IDLE; 
+      P_R3_CHECK,   // if (row3 == 0) goto P_R3_IDLE; else goto P_R3_REMOVE;
       
-      P_R4_FIRST,
-      P_R4_REMOVE,
-      P_R4_IDLE,
-      P_R4_CHECK,
+      P_R4_FIRST,   // if (row4 == 0) goto P_FISRT_SEL;
+      P_R4_REMOVE,  // row4--;
+      P_R4_IDLE,    // if (btn_r4) goto P_R4_CHECK; else if (btn_toggle) goto SUM_12; else goto P_R4_IDLE; 
+      P_R4_CHECK,   // if (row4 == 0) goto P_R4_IDLE; else goto P_R4_REMOVE;
       
-      XOR_12,
-      XOR_123,
-      XOR_1234,
+      // computer's turn (only in single player mode)
+      // implementation of https://en.wikipedia.org/wiki/Nim#Mathematical_theory
+      // the goal is to find a valid move
+      // so that row1^row2^row3^row4 = 0
+      // which is the winning position
+      // if can not find, just remove one stone from a non-empty row
+      XOR_12,     // R0 = row1 ^ row2;
+      XOR_123,    // R0 ^= row3;
+      XOR_1234,   // R0 ^= row4;
       
-      E_R1_COMPUTE,
-      E_R1_CHECK,
-      E_R1_CHECK_BRANCH,
-      E_R1_REMOVE,
+      E_R1_COMPUTE,       // R1 = R0 ^ row1;              // R1 = row2 ^ row3 ^ row4
+      E_R1_CHECK,         // R2 = (R1 <= row1);           // check if it is valid to let row1 = R1
+      E_R1_CHECK_BRANCH,  // if (!R2) goto E_R2_COMPUTE;  // otherwise try row2
+      E_R1_REMOVE,        // row1 = R1; goto SUM_12;      // let row1 = R1, so that row1^row2^row3^row4 = 0
       
-      E_R2_COMPUTE,
-      E_R2_CHECK,
-      E_R2_CHECK_BRANCH,
-      E_R2_REMOVE,
+      E_R2_COMPUTE,       // R1 = R0 ^ row2;
+      E_R2_CHECK,         // R2 = (R1 <= row2);
+      E_R2_CHECK_BRANCH,  // if (!R2) goto E_R3_COMPUTE;
+      E_R2_REMOVE,        // row2 = R1; goto SUM_12;
       
-      E_R3_COMPUTE,
-      E_R3_CHECK,
-      E_R3_CHECK_BRANCH,
-      E_R3_REMOVE,
+      E_R3_COMPUTE,       // R1 = R0 ^ row3;
+      E_R3_CHECK,         // R2 = (R1 <= row3);
+      E_R3_CHECK_BRANCH,  // if (!R2) goto E_R4_COMPUTE;
+      E_R3_REMOVE,        // row3 = R1; goto SUM_12;
       
-      E_R4_COMPUTE,
-      E_R4_CHECK,
-      E_R4_CHECK_BRANCH,
-      E_R4_REMOVE,
+      E_R4_COMPUTE,       // R1 = R0 ^ row4;
+      E_R4_CHECK,         // R2 = (R1 <= row4);
+      E_R4_CHECK_BRANCH,  // if (!R2) goto E_R1_NZ_CHECK; // can not find winning position, fallback
+      E_R4_REMOVE,        // row4 = R1; goto SUM_12;
       
-      E_R1_NZ_CHECK,
-      E_R1_REMOVE_ONE,
+      E_R1_NZ_CHECK,   // if (row1 == 0) goto E_R2_NZ_CHECK;
+      E_R1_REMOVE_ONE, // row1 --; goto SUM_12;
       
-      E_R2_NZ_CHECK,
-      E_R2_REMOVE_ONE,
+      E_R2_NZ_CHECK,   // if (row2 == 0) goto E_R3_NZ_CHECK;
+      E_R2_REMOVE_ONE, // row2 --; goto SUM_12;
       
-      E_R3_NZ_CHECK,
-      E_R3_REMOVE_ONE,
+      E_R3_NZ_CHECK,   // if (row3 == 0) goto E_R4_NZ_CHECK;
+      E_R3_REMOVE_ONE, // row3 --; goto SUM_12;
       
-      E_R4_REMOVE_ONE,
+      E_R4_REMOVE_ONE, // row4 --;
       
-      SUM_12,
-      SUM_123,
-      SUM_1234,
-      CHECK_SUM,
+      SUM_12,     // R0 = row1 + row2;
+      SUM_123,    // R0 += row3;
+      SUM_1234,   // R0 += row4;
+      CHECK_SUM,  // if (R0 == 0) goto END; else goto TOGGLE_PLAYER;
       
-      END
+      END  // while(1);
     };
   }
 

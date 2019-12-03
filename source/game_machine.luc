@@ -1,3 +1,7 @@
+/* NIM game machine
+defines the data path that utilizes ALU, control unit (game fsm) and regfiles
+*/
+
 global ASel {
   const REG_A = 0;
   const RANDOM = 1;
@@ -94,10 +98,12 @@ module game_machine (
     game_alu.alufn = game_controlunit.alufn;
     
     // display
+    // show number of stones of each row
     led_r1 = r1_decoder.out;
     led_r2 = r2_decoder.out;
     led_r3 = r3_decoder.out;
     led_r4 = r4_decoder.out;
+    // show current player
     led_player1 = 0;
     led_player2 = 0;
     led_player3 = 0;
@@ -106,6 +112,7 @@ module game_machine (
       1: led_player2 = 1;
       2: led_player3 = 1;
     }
+    // game over led
     led_end = game_controlunit.halted;
   }
 }

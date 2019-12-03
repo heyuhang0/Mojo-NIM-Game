@@ -1,3 +1,11 @@
+/*
+Pseudo-random Number Generator:
+this module will generate a random 16-bit integer at every clock cycle
+based on Xorshift (https://en.wikipedia.org/wiki/Xorshift)
+
+It is based on pn_gen module in mojo component library, but modifications are made
+so that it resets only when power up and not affected by rst signal
+*/
 module random_gen #(
     // SEED needs to always be non-zero
     // Since seed is XORed with the 32MSBs of SEED, we need the 96 LSBs to be nonzero.
@@ -25,6 +33,7 @@ module random_gen #(
     w.d = w.q ^ (w.q >> 19) ^ t ^ (t >> 8);
 
     // Manually reset the flip-flops so we can change the reset value
+    // only run once
     if (!initd.q) {
       x.d = SEED[0+:32];
       y.d = SEED[32+:32];

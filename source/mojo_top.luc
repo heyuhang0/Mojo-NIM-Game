@@ -29,6 +29,7 @@ module mojo_top (
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
     
+    // process button signal
     button_conditioner btn_r1_conditioner(.in(io_button[3]));
     button_conditioner btn_r2_conditioner(.in(io_button[1]));
     button_conditioner btn_r3_conditioner(.in(io_button[4]));
@@ -55,6 +56,7 @@ module mojo_top (
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
     
+    // setup inputs for game machine
     machine.btn_r1 = btn_r1.out;
     machine.btn_r2 = btn_r2.out;
     machine.btn_r3 = btn_r3.out;
@@ -62,6 +64,7 @@ module mojo_top (
     machine.btn_toggle = btn_toggle.out;
     machine.num_players = io_dip[0][1:0];
     
+    // setup outputs for game machine
     io_led[2] = machine.led_r1;
     io_led[1] = machine.led_r2;
     io_led[0] = machine.led_r3;

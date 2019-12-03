@@ -1,3 +1,8 @@
+/*
+Stones decoder: decode a 3-bit integer 'in' to a 8-bit bitmap 'out'
+which has 'in' number of 1's in the bitmap
+this module is used to map number in regfiles to LED matrix display
+*/
 module stones_decoder (
     input in[3],
     output out[8]

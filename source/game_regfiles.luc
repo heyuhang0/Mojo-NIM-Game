@@ -1,3 +1,7 @@
+/* Game machine Regfiles
+with two read ports
+and one write port
+*/
 global Reg {
   const R0 = 0;
   const R1 = 1;
@@ -22,7 +26,7 @@ module game_regfiles (
     output out_a[16], //read port a
     output out_b[16], //read port b
     
-    output display[16]
+    output display[16] // data for display (UI)
   ) {
   
   .clk(clk){
@@ -42,7 +46,7 @@ module game_regfiles (
   }
 
   always {
-    
+    // write port
     if (we) {
       case(write_address) {
         Reg.R0: r0.d = data;
@@ -56,6 +60,7 @@ module game_regfiles (
       }
     }
     
+    // read port a
     case(read_address_a) {
       Reg.R0: out_a = r0.q;
       Reg.R1: out_a = r1.q;
@@ -68,6 +73,7 @@ module game_regfiles (
       default: out_a = 0;
     }
     
+    // read port b
     case(read_address_b) {
       Reg.R0: out_b = r0.q;
       Reg.R1: out_b = r1.q;
@@ -80,6 +86,11 @@ module game_regfiles (
       default: out_b = 0;
     }
     
+    // extract bits for display
+    // |-------------------------- 14-bit display signal ---------------------------|
+    // |----- 2-bit ----|--- 3-bit --- |--- 3-bit --- |--- 3-bit --- |--- 3-bit --- |
+    // | current player | row 4 stones | row 3 stones | row 2 stones | row 1 stones |
+    // |----------------------------------------------------------------------------|
     display[2:0] = row1_stones.q[2:0];
     display[5:3] = row2_stones.q[2:0];
     display[8:6] = row3_stones.q[2:0];

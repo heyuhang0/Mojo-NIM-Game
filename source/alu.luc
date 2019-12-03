@@ -1,3 +1,9 @@
+/* 16-bit ALU module
+based on standard beta ALU
+with additional MUL, NOTA, B, NOTB, NOR, XNOR, NAND functions
+available alufns are defined in Alufn block below
+*/
+
 global Alufn {
   const ADD = 6b000000;
   const SUB = 6b000001;
